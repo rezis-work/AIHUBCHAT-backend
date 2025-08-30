@@ -1,4 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import * as bcrypt from "bcryptjs";
 import { CreateUserInput } from "./dto/create-user.input";
 import { UpdateUserInput } from "./dto/update-user.input";
@@ -41,6 +45,18 @@ export class UsersService {
 
   async remove(_id: string) {
     return this.usersRepository.findOneAndDelete({ _id });
+  }
+
+  async verifyUser(email: string, password: string) {
+    const user = await this.usersRepository.findOne({ email });
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    const passwordIsValid = await bcrypt.compare(password, user.password);
+    if (!passwordIsValid) {
+      throw new UnauthorizedException("Invalid email or password");
+    }
+    return user;
   }
 
   private async hashPassword(password: string) {
