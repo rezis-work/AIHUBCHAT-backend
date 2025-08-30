@@ -29,5 +29,7 @@ export class AuthService {
       httpOnly: true,
       expires,
     });
+
+    return { success: true };
   }
 }

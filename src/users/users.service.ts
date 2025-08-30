@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -12,10 +13,14 @@ import { UsersRepository } from "./users.repository";
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
   async create(createUserInput: CreateUserInput) {
-    return this.usersRepository.create({
-      ...createUserInput,
-      password: await this.hashPassword(createUserInput.password),
-    });
+    try {
+      return await this.usersRepository.create({
+        ...createUserInput,
+        password: await this.hashPassword(createUserInput.password),
+      });
+    } catch {
+      throw new ConflictException("User already exists");
+    }
   }
 
   async findAll() {
