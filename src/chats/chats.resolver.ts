@@ -7,6 +7,7 @@ import { UseGuards } from "@nestjs/common";
 import { GqlAuthGuard } from "src/auth/guards/gql-auth.guard";
 import { CurrentUser } from "src/auth/current-user.decorator";
 import { TokenPayload } from "src/auth/token-payload.interface";
+import { PaginationArgs } from "src/common/dto/pagination-args.dto";
 
 @Resolver(() => Chat)
 export class ChatsResolver {
@@ -14,20 +15,23 @@ export class ChatsResolver {
 
   @UseGuards(GqlAuthGuard)
   @Mutation(() => Chat)
-  createChat(
+  async createChat(
     @Args("createChatInput") createChatInput: CreateChatInput,
     @CurrentUser() user: TokenPayload
-  ) {
+  ): Promise<Chat> {
     return this.chatsService.create(createChatInput, user._id);
   }
 
+  @UseGuards(GqlAuthGuard)
   @Query(() => [Chat], { name: "chats" })
-  findAll() {
-    return this.chatsService.findAll();
+  async findAll(@Args() paginationArgs: PaginationArgs): Promise<Chat[]> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return this.chatsService.findMany([], paginationArgs);
   }
 
   @Query(() => Chat, { name: "chat" })
-  findOne(@Args("_id") _id: string) {
+  async findOne(@Args("_id") _id: string): Promise<Chat> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.chatsService.findOne(_id);
   }
 
