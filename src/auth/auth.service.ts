@@ -27,9 +27,8 @@ export class AuthService {
     );
 
     const tokenPayload: TokenPayload = {
-      _id: user._id.toString(),
-      email: user.email,
-      username: user.username,
+      ...user,
+      _id: user._id.toHexString(),
     };
 
     const token = this.jwtService.sign(tokenPayload);

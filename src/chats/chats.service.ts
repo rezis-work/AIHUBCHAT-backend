@@ -4,10 +4,14 @@ import { UpdateChatInput } from "./dto/update-chat.input";
 import { ChatsRepository } from "./chats.repository";
 import { PipelineStage, Types } from "mongoose";
 import { PaginationArgs } from "src/common/dto/pagination-args.dto";
+import { UsersService } from "src/users/users.service";
 
 @Injectable()
 export class ChatsService {
-  constructor(private readonly chatsRepository: ChatsRepository) {}
+  constructor(
+    private readonly chatsRepository: ChatsRepository,
+    private readonly usersService: UsersService
+  ) {}
   async create(createChatInput: CreateChatInput, userId: string) {
     return this.chatsRepository.create({
       ...createChatInput,
@@ -50,13 +54,14 @@ export class ChatsService {
       },
       {
         $lookup: {
-          from: "users",
+          from: "userdocuments",
           localField: "latestMessage.userId",
           foreignField: "_id",
           as: "latestMessage.user",
         },
       },
     ]);
+
     chats.forEach((chat) => {
       if (!chat.latestMessage._id) {
         delete chat.latestMessage;
@@ -64,16 +69,16 @@ export class ChatsService {
       }
 
       const u = Array.isArray(chat.latestMessage.user)
-        ? chat.latestMessage.user[0]
-        : chat.latestMessage.user;
+        ? this.usersService.toEntity(chat.latestMessage.user[0])
+        : this.usersService.toEntity(chat.latestMessage.user);
 
       chat.latestMessage.user = u ?? null;
 
       if (chat.latestMessage.user?._id) {
-        chat.latestMessage.user._id = chat.latestMessage.user._id.toString();
+        chat.latestMessage.user._id = chat.latestMessage.user._id.toHexString();
       }
 
-      chat.latestMessage.chatId = chat._id.toString?.() ?? chat._id;
+      chat.latestMessage.chatId = chat._id.toHexString() ?? chat._id;
     });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return chats;

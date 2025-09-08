@@ -50,7 +50,7 @@ export class MessagesService {
   }
 
   async getMessages({ chatId, skip, limit }: GetMessagesArgs) {
-    return this.chatsRepository.model.aggregate([
+    const messages = await this.chatsRepository.model.aggregate([
       {
         $match: {
           _id: new Types.ObjectId(chatId),
@@ -77,7 +77,7 @@ export class MessagesService {
       },
       {
         $lookup: {
-          from: "users",
+          from: "userdocuments",
           localField: "userId",
           foreignField: "_id",
           as: "user",
@@ -93,6 +93,14 @@ export class MessagesService {
         $set: { chatId },
       },
     ]);
+
+    for (const message of messages) {
+      console.log(message.user);
+      message.user = this.usersService.toEntity(message.user);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return messages;
   }
 
   async messageCreated() {
